@@ -111,7 +111,7 @@ public ResponseEntity<ResponseData<CategoryCreateResponse>> createCategory(@Vali
 }
 ```
 
-![01-Response.png](/assets/Java/ValidationHandler/01-response.png)
+![01-Response.png](/assets/images/java/errorhandling/01-response.png)
 
 
 Eso sería todo 🌟, podemos agregar aún más validaciones con **anotaciones** de Spring Boot y podemos modificar la estructura de la respuesta en caso de que existan errores al momento de validar la información.
