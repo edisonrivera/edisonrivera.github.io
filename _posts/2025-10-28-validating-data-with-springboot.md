@@ -5,7 +5,7 @@ date: 2025-10-28 18:51:00 +0800
 categories: [ 'Java', 'Spring Boot' ]
 tags: [ 'Validación' ]
 image:
-  path: /assets/images/java/validation/logo.png
+  path: /assets/images/java/validation/logo.webp
   lqip: data:image/webp;base64,UklGRpoAAABXRUJQVlA4WAoAAAAQAAAADwAABwAAQUxQSDIAAAARL0AmbZurmr57yyIiqE8oiG0bejIYEQTgqiDA9vqnsUSI6H+oAERp2HZ65qP/VIAWAFZQOCBCAAAA8AEAnQEqEAAIAAVAfCWkAALp8sF8rgRgAP7o9FDvMCkMde9PK7euH5M1m6VWoDXf2FkP3BqV0ZYbO6NA/VFIAAAA
   alt: Spring Validation
 ---
@@ -38,7 +38,37 @@ servicios antes de ejecutar procesos 👽
 
 ---
 
-Para cada anotación podemos indicar un mensaje en caso de que la validación no se cumpla
+Para usar estas anotaciones y validar la información, seguiremos los siguientes pasos:
+
+- Agregar la dependencia **spring-boot-starter-validation** en nuestro pom.xml
+
+```xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-validation</artifactId>
+</dependency>
+```
+
+- Debemos anotar con **`@Valid`** el dto.
+
+```java
+@DeleteMapping
+@ResponseStatus(HttpStatus.NO_CONTENT)
+public Mono<Void> delete(@RequestBody @Valid final QuotaCodRequestDto quotaCodRequestDto) {
+    return this.quotaService.delete(quotaCodRequestDto);
+}
+```
+
+- Si queremos validar **`@PathVariable`** o **`@RequestParam`**, debemos agregar la anotación **`@Validated`** en nuestro controlador
+
+```java
+@Validated
+public class QuotaController {
+  ...
+}
+```
+
+Para cada anotación podemos indicar un mensaje de error en caso de que la validación no se cumpla
 
 ```java
 public record QuotaFilterRequestDto(
@@ -60,19 +90,109 @@ public record QuotaFilterRequestDto(
 ```
 
 > Podemos usar placeholders `{}` en los mensajes de error, esto facilita el que si tenemos que cambiar
-> algún valor de la validación, no nos preocupemos por cambiar en el mensaje también.  🤖
+> algún valor de la validación, no nos preocupemos por cambiar en el mensaje también. 🤖
 {: .prompt-info }
 
-#### ✅ **Ventajas**
+---
 
-- Validar la información que llega los servicios garantiza que se trabaje con información limpia, evitando errores inesperados.
-- Optimiza el uso de recursos, ya que si los datos no pasan la validación nunca llega a ejecutar lógica intern (Consulta base de datos, llamar a servicios terceros, etc)
-- Informamos los errores de manera detallada siguiendo éstandares y buenas prácticas.
+Si queremos capturar el mensaje de error para devolverlo como respuesta en el api, lo haremos con un **`@RestControllerAdvice`**
+
+```java
+public record ErrorMessageResponseDto(String message, Instant timestamp) {
+}
+```
+> Usaremos este dto para devolver información sobre los errores de validación.
+
+
+- Capturar errores de **`@RequestBody`** + **`@Valid`**
+
+```java
+@RestControllerAdvice
+public class GlobalExceptionHandler {
+  @ExceptionHandler(MethodArgumentNotValidException.class)
+  public ResponseEntity<ErrorMessageResponseDto> handleMethodValidationExceptions(final MethodArgumentNotValidException ex) {
+    final String errorMessage = ex.getBindingResult().getAllErrors().stream().findFirst()
+      .map(DefaultMessageSourceResolvable::getDefaultMessage).orElse("Validation error unexpected");
+
+    return new ResponseEntity<>(new ErrorMessageResponseDto(errorMessage, Instant.now()), HttpStatus.UNPROCESSABLE_ENTITY);
+  }
+}
+```
+
+- Capturar errores de **`@RequestParam`**, **`@PathVariable`** + **`@Validated`**
+
+```java
+@RestControllerAdvice
+public class GlobalExceptionHandler {
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ErrorMessageResponseDto> handleConstraintViolationExceptions(final ConstraintViolationException ex) {
+        final String errorMessage = ex.getConstraintViolations().stream().findFirst()
+                .map(ConstraintViolation::getMessage).orElse("Validation error unexpected");
+
+        return new ResponseEntity<>(new ErrorMessageResponseDto(errorMessage, Instant.now()), HttpStatus.UNPROCESSABLE_ENTITY);
+    }
+}
+```
+
+> Al validar **`@RequestBody`** + **`@Valid`** la excepción es del tipo **MethodArgumentNotValidException**.
+> Y si validamos **`@RequestParam`**, **`@PathVariable`** + **`@Validated`** la excepción es **ConstraintViolationException** 💡
+{: .prompt-info }
+
+---
+
+Por defecto **`@Valid`** únicamente verifica y valida los campos de primer nivel del dto.
+
+```java
+@Data
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class AdminRegisterRequestDto implements Serializable {
+  @NotBlank(message = "El nombre es obligatorio")
+  @Pattern(regexp = "^[a-zA-Z\\s]{5,100}$", message = "El nombre solo permite letras")
+  private String name;
+
+  @NotBlank(message = "El apellido es obligatorio")
+  @Pattern(regexp = "^[a-zA-Z\\s]{5,100}$", message = "El apellido solo permite letras")
+  private String lastName;
+
+  @NotNull(message = "Los datos de usuario son obligatorios")
+  private UsuarioRegisterDto user;
+}
+```
+
+Por ejemplo, aquí únicamente se validarán los campos **name** y **lastName**, si el dto **UsuarioRegisterDto** también tiene
+validaciones no se tomarán en cuenta.
+
+Para validar dto's anidados debemos anotarlos con **`@Valid`**, esto garantiza que se validen los campos de ese dto.
+
+```java
+@Data
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class AdminRegisterRequestDto implements Serializable {
+  @NotBlank(message = "El nombre es obligatorio")
+  @Pattern(regexp = "^[a-zA-Z\\s]{5,100}$", message = "El nombre solo permite letras")
+  private String name;
+
+  @NotBlank(message = "El apellido es obligatorio")
+  @Pattern(regexp = "^[a-zA-Z\\s]{5,100}$", message = "El apellido solo permite letras")
+  private String lastName;
+
+  @Valid
+  @NotNull(message = "Los datos de usuario son obligatorios")
+  private UsuarioRegisterDto user;
+}
+```
+
+### **¿Por qué validar la información de nuestros servicios?** 🤔
+
+- Garantiza que se trabaje con información limpia, evitando errores inesperados.
+- Optimiza el uso de recursos, ya que si los datos no pasan la validación nunca llega a ejecutar lógica interna (Consultar base de datos, llamar a servicios terceros, etc.)
+- Informamos los errores de manera detallada siguiendo estándares y buenas prácticas.
+
 
 #### **Observaciones**
 
 - No todas las anotaciones se pueden usar con todos los tipos de datos. Por ejemplo si tratamos de validar con **`@Past`** un Integer obtendremos una excepción
 
-```java
+```
 jakarta.validation.UnexpectedTypeException: HV000030: No validator could be found for constraint 'jakarta.validation.constraints.Past' validating type 'java.lang.Integer'. Check configuration for 'pageNo'
 ```
