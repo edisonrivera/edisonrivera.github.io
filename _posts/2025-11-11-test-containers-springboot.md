@@ -272,6 +272,3 @@ Process finished with exit code 0
 #### **Ventajas** ✅
 - Reducción en el tiempo de escribir tests, ya que si usamos alguna característica especial de una base de datos (SQL Server, Postgres, Oracle, etc.) para hacerlo funcionar con **H2** nos podría llevar más tiempo configurarla o directamente no se podría lograr.
 - Ejecutamos pruebas realistas, confiables y eliminando bugs (Ej. Funciona con **H2**, pero con **SQL Server** no), ya que usamos el mismo software que en el entorno de producción.
-
-
-
