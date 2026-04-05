@@ -5,7 +5,7 @@ date: 2025-12-10 21:52:00 +0800
 categories: [ 'Java', 'Spring Boot', 'Testing' ]
 tags: ['Test']
 image:
-  path: /assets/images/java/jacoco/jacoco-log.webp
+  path: /assets/images/java/jacoco/jacoco-logo.webp
   lqip: data:image/webp;base64,UklGRpoAAABXRUJQVlA4WAoAAAAQAAAADwAABwAAQUxQSDIAAAARL0AmbZurmr57yyIiqE8oiG0bejIYEQTgqiDA9vqnsUSI6H+oAERp2HZ65qP/VIAWAFZQOCBCAAAA8AEAnQEqEAAIAAVAfCWkAALp8sF8rgRgAP7o9FDvMCkMde9PK7euH5M1m6VWoDXf2FkP3BqV0ZYbO6NA/VFIAAAA
   alt: JaCoCo
 ---
