@@ -133,10 +133,10 @@ public int sum(int a, int b) {
 
 Este código se puede traducir a instrucciones en la JVM
 
-1) Carga `a`
-2) Carga `b`
-3) Suma `a` + `b`
-4) Retorna el resultado
++ Carga `a`
++ Carga `b`
++ Suma `a` + `b`
++ Retorna el resultado
 
 **JaCoCo** se encarga de contabilizar todas las instrucciones
 
